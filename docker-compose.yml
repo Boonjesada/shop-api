@@ -1,0 +1,33 @@
+name: shop-api
+
+services:
+  mongo:
+    image: mongo:7
+    restart: unless-stopped
+    volumes:
+      - mongo-data:/data/db
+    healthcheck:
+      test: ["CMD", "mongosh", "--quiet", "--eval", "db.adminCommand('ping').ok"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    # Uncomment to inspect the database from your machine with MongoDB Compass
+    # ports:
+    #   - "27017:27017"
+
+  api:
+    build: .
+    image: shop-api:local
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      PORT: "3000"
+      MONGODB_URI: mongodb://mongo:27017/shop_api
+    ports:
+      - "${API_HOST_PORT:-3000}:3000"
+    depends_on:
+      mongo:
+        condition: service_healthy
+
+volumes:
+  mongo-data:
